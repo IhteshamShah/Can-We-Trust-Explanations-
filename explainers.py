@@ -72,7 +72,7 @@ class Explainers:
             )
 
             # Explain instance
-            LIME_explanation = LIME_explainer.explain_instance(sample[0], model, num_features=46, num_samples=2000, top_labels=20)          
+            LIME_explanation = lime_explainer.explain_instance(sample[0], model, num_features=46, num_samples=2000, top_labels=20)          
 
             # Extract positive contributions
             lime_values = LIME_explanation.local_exp[Predicted_class]

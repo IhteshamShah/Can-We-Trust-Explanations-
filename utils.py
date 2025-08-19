@@ -7,6 +7,11 @@ import logging
 import matplotlib.pyplot as plt
 import os
 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import SMOTE
+from explainers import Explainers
+
 # Configure logger
 logging.basicConfig(
     filename="utils.log",
@@ -18,6 +23,8 @@ logging.basicConfig(
 class Utils:
     def __init__(self, dataset_path=None):
         self.dataset_path = dataset_path
+        self.EXP = Explainers() #initialize Explainers here
+
         logging.info(f"Utils initialized with dataset path: {dataset_path}")
 
     def data_read_function(self):
@@ -157,8 +164,87 @@ class Utils:
                 plt.savefig(save_path, bbox_inches="tight")
                 logging.info(f"Plot saved to {save_path}")
 
-            plt.show()
+            plt.close()
 
         except Exception as e:
             logging.error(f"Error in Plot_the_data: {e}")
             raise
+
+    def train_randomForestClassifier(self, x_train, y_train, x_test):
+        rf = RandomForestClassifier()
+        rf.fit(x_train, y_train)
+        y_pred = rf.predict(x_test)
+        return rf , y_pred
+
+    def main_function_guidlineComparison(self, data, X, Y, classes_names, Plot_Data, treatment_name): 
+        logging.info("Starting main_function_guidlineComparison execution") 
+        warnings.filterwarnings('ignore')
+
+        Lime_Concordance=[]
+        SHAP_Concordance=[]
+
+        #for _ in range(5):
+
+        y=Y[treatment_name]
+
+        smote = SMOTE(random_state=42)
+
+        X_class_resampled, y_class_resampled = smote.fit_resample(X , y)
+
+        X_class_resampled.replace({False: 0, True: 1}, inplace=True)
+        y_class_resampled.replace({False:0, True:1}, inplace= True)
+
+        x_train,x_test,y_train,y_test=train_test_split(X_class_resampled,y_class_resampled,test_size=0.2)
+
+        x_train.reset_index(drop=True, inplace=True)
+        y_train.reset_index(drop=True, inplace=True)
+        x_test.reset_index(drop=True, inplace=True)
+        y_test.reset_index(drop=True, inplace=True)
+
+        #X_res, y_res = sm.fit_resample(x_train, y_train)
+
+        #Randomforest Classifier
+        logging.info("Training RandomForest classifier for GuidlineComparision")
+        rf, y_pred  = train_randomForestClassifier(x_train, y_train, x_test)
+        logging.info("RandomForest training complete for GuidlineComparision")
+        
+
+
+        medical_guidelines= self.Guidlines(self) #function for medical guidlines
+        j_list= computing_j (rf, x_test, y_test)[:10]
+        #print('j_list', j_list)
+        for j in j_list:
+            data_row = X.iloc[[j], :] #single instance from the test dataset
+            sample =data_row.values.reshape(1, -1) 
+            Predicted_class= rf.predict(sample)[0]
+            logging.info("calling shap_explain function for GuidlineComparision")
+            shap_important_features= self.EXP.shap_explain(rf.predict_proba, x_train, y_test, data_row,Predicted_class)
+            logging.info("Got Shap explanation for GuidlineComparision")
+
+            logging.info("calling lime_explain function for GuidlineComparision")
+            lime_features = self.EXP.lime_explain (rf.predict_proba, x_train, y_test, sample,Predicted_class)
+            logging.info("Got Lime explanation for GuidlineComparision")
+
+            # Compare SHAP
+            shap_comparison = self.compare_with_guidelines(self, shap_important_features, medical_guidelines)
+            logging.info("Done shap comparison with Guidline")
+            # Compare LIME
+            lime_comparison = self.compare_with_guidelines(self, lime_features, medical_guidelines)
+            logging.info("Done Lime comparison with Guidline")
+
+            #print("LIME Comparison with Guidelines:", lime_comparison)
+            #print("SHAP Comparison with Guidelines:", shap_comparison)
+
+            lime_concordance = self.calculate_concordance(self, lime_comparison)
+            shap_concordance = self.calculate_concordance(self, shap_comparison)
+
+            #print("LIME Concordance with Guidelines:", lime_concordance)
+            #print("SHAP Concordance with Guidelines:", shap_concordance)
+
+            Lime_Concordance.append(lime_concordance)
+            SHAP_Concordance.append(shap_concordance)
+        
+        Plot_Data[y_test.name]=[Lime_Concordance, SHAP_Concordance]
+        
+        return Plot_Data
+        
