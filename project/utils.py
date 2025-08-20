@@ -79,7 +79,7 @@ class Utils:
                 sample = data_row.values.reshape(1, -1)
                 if rf.predict(sample)[0] == 1 and y_test[j] == 1:
                     J.append(j)
-            logging.info(f"Computed indices: {J}")
+            logging.info(f"Computed indices for J")
             return J
         except Exception as e:
             logging.error(f"Error in computing_j: {e}")
@@ -110,7 +110,7 @@ class Utils:
     def compare_with_guidelines(self, important_features, guidelines):
         comparison = [(feature, self.map_importance(feature, important_features), guidelines[feature]) 
                       for feature in guidelines]
-        logging.info(f"Comparison with guidelines: {comparison}")
+        logging.info(f"done Comparison with guidelines")
         return comparison
 
     def calculate_concordance(self, comparison):
@@ -120,7 +120,7 @@ class Utils:
                (model_importance == 0 and guideline_importance == 'Low'):
                 concordant_pairs += 1
         concordance = concordant_pairs / len(comparison)
-        logging.info(f"Concordance calculated: {concordance}")
+        logging.info(f"Concordance calculated")
         return concordance
     
 
@@ -188,6 +188,7 @@ class Utils:
         rf = RandomForestClassifier()
         rf.fit(x_train, y_train)
         y_pred = rf.predict(x_test)
+        logging.info(f"randomforestcalssifer traind on {x_train.shape} size of training data")
         return rf , y_pred
     
     def prepare_data(self, X, Y, treatment_name):
@@ -208,7 +209,6 @@ class Utils:
         y_train.reset_index(drop=True, inplace=True)
         x_test.reset_index(drop=True, inplace=True)
         y_test.reset_index(drop=True, inplace=True)
-
         return x_train, x_test, y_train, y_test
 
 
@@ -223,7 +223,6 @@ class Utils:
         SHAP_Concordance=[]
 
         #Randomforest Classifier
-        logging.info("Training RandomForest classifier for GuidlineComparision")
         rf, y_pred  = self.train_randomForestClassifier(x_train, y_train, x_test)
         logging.info("RandomForest training complete for GuidlineComparision")
 
@@ -263,6 +262,7 @@ class Utils:
         
         guidline_Plot_Data[y_test.name]=[SHAP_Concordance, Lime_Concordance]
 
+        logging.info(f"returning guidline_Plot_Data for {y_test.name}")
         
         return guidline_Plot_Data
         
@@ -276,7 +276,6 @@ class Utils:
         
 
         #Randomforest Classifier
-        logging.info("Training RandomForest classifier for Lime_Shap_fidelity")
         rf, y_pred  = self.train_randomForestClassifier(x_train, y_train, x_test)
         logging.info("RandomForest training complete for Lime_Shap_fidelity")
         
@@ -315,6 +314,7 @@ class Utils:
             LIME_explanation = LIME_explainer.explain_instance(sample[0], rf.predict_proba, num_features=46, num_samples=2000, top_labels=20)
             #AA= np.array(exp.local_pred, dtype==int)
             Lime_fidelity.append(LIME_explanation.score)
+            
 
 
             #Data_row = x_test.iloc[[3], :]
@@ -328,6 +328,7 @@ class Utils:
 
 
         fidelity_Plot_Data[y_test.name]=[Shap_fidelity, Lime_fidelity]
+        logging.info(f"returning fidelity_Plot_Data for {y_test.name}")
         
         return fidelity_Plot_Data
     
@@ -361,6 +362,7 @@ class Utils:
             Lime_VSI.append(lime_vsi)
             
         stability_Plot_Data[treatment_name]=[Shap_VSI, Lime_VSI]
+        logging.info(f"returning stability_Plot_Data for {y_test.name}")
         
         return stability_Plot_Data
         

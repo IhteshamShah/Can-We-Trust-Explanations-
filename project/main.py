@@ -32,7 +32,7 @@ def main():
                 df_results["fidelity"]["lime"]   # All LIME values under fidelity
     
     '''
-    ut = Utils(dataset_path="./data/NKR_IKNL_breast_syntheticdata.csv")
+    ut = Utils(dataset_path="../data/NKR_IKNL_breast_syntheticdata.csv")
     warnings.filterwarnings('ignore')
     data, X, Y, classes_names = ut.data_read_function( )
     Treatments=['chemo','target','hormonal','radio','surgery']
