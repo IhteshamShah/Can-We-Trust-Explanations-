@@ -22,29 +22,33 @@ def main():
 
     guidline_Plot_Data={}
     fidelity_Plot_Data={}
+    stability_Plot_Data = {}
 
     for treatment_name in Treatments :
-        guidline_Plot_Data= ut.main_function_guidlineComparison(X, Y, classes_names, guidline_Plot_Data)
-        fidelity_Plot_Data= ut.Lime_Shap_fidelity(data, X, Y, classes_names, fidelity_Plot_Data)
+        guidline_Plot_Data= ut.Lime_Shap_guidlineComparison(X, Y, classes_names, guidline_Plot_Data, treatment_name)
+        fidelity_Plot_Data= ut.Lime_Shap_fidelity(X, Y, classes_names, fidelity_Plot_Data, treatment_name)
+        stability_Plot_Data= ut.Lime_Shap_stability(X, Y,classes_names, stability_Plot_Data, treatment_name)
 
-    colors = ['skyblue', 'orange'] #plot colors for shap and Lime
-    ut.Plot_the_data(guidline_Plot_Data, colors, filename = 'guidline_comparison_plot')
+    colors_guidline = ['darkgoldenrod', 'brown'] #plot colors for shap and Lime
+    colors_fidelity = ['gray', 'brown'] #plot colors for shap and Lime
+    colors_stability = ['skyblue', 'orange'] # Bar colors in plot
 
+    ut.Plot_the_data(guidline_Plot_Data, colors_guidline, filename = 'guidline_comparison_plot')
+    ut.Plot_the_data(fidelity_Plot_Data, colors_fidelity, filename = 'fidelity_comparison_plot')
+    ut.Plot_the_data(stability_Plot_Data, colors_stability, filename = 'stability_comparison_plot')
 
+    # Combine into a single dictionary
+    results = {
+        "guidline": guidline_Plot_Data,
+        "fidelity": fidelity_Plot_Data,
+        "stability": stability_Plot_Data
+    }
 
-
-
-
-
-    
-    
-
+    # Convert to DataFrame
+    results_df = pd.DataFrame({k: pd.Series(v) for k, v in results.items()})
+    #save the results in the result directory
     os.makedirs("results", exist_ok=True)
-    results_df = pd.DataFrame(Plot_Data)
-    results_df.to_csv("GuidlineComparison_plotData.csv", index=False)
-
-
-
+    results_df.to_csv("Result_Data.csv", index=False)
 
 
 
