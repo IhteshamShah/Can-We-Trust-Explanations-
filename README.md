@@ -27,13 +27,8 @@ We focus on **LIME** and **SHAP** explainers, and evaluate them along three key 
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/can-we-trust-explanation.git
-cd can-we-trust-explanation
-
-# Create and activate environment (recommended)
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+git clone https://github.com/IhteshamShah/Can-We-Trust-Explanations-.git
+cd project
 
 # Install dependencies
 pip install -r requirements.txt
