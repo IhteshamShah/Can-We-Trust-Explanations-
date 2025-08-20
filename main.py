@@ -15,6 +15,23 @@ from imblearn.over_sampling import SMOTE
 from utils import Utils
 
 def main():
+    '''
+    It create the results directory and stores:
+     (1) the comparison plots of fidelity, stability and comparison with the medical guidlines over LIME and SHAP
+     (2) save the results in Result_Data.csv in the foloowing format
+
+                        guidline            fidelity             stability           
+                        shap   lime       shap   lime       shap   lime
+                    0      0.80  0.60       0.90  0.70       0.50  0.40
+                    1      0.70  0.55       0.85  0.72       0.52  0.42
+                    2      0.75  0.65       0.87  0.71       0.49  0.41
+
+    which can be accessable late using below commands
+    
+                df_results["guidline"]["shap"]   # All SHAP values under guideline
+                df_results["fidelity"]["lime"]   # All LIME values under fidelity
+    
+    '''
     ut = Utils(dataset_path="./data/NKR_IKNL_breast_syntheticdata.csv")
     warnings.filterwarnings('ignore')
     data, X, Y, classes_names = ut.data_read_function( )
@@ -45,12 +62,14 @@ def main():
     }
 
     # Convert to DataFrame
-    results_df = pd.DataFrame({k: pd.Series(v) for k, v in results.items()})
+    results_df = pd.concat(
+    {outer_k: pd.DataFrame(inner_v) for outer_k, inner_v in results.items()},
+    axis=1
+    )
     #save the results in the result directory
     os.makedirs("results", exist_ok=True)
-    results_df.to_csv("Result_Data.csv", index=False)
-
-
+    file_path = os.path.join("results", "Result_Data.csv")
+    results_df.to_csv(file_path, index=False)
 
 
 if __name__ == "__main__":
