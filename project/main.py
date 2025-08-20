@@ -24,18 +24,26 @@ def main():
      (1) the comparison plots of fidelity, stability and comparison with the medical guidlines over LIME and SHAP
      (2) save the results in Result_Data.csv in the foloowing format
 
-                        guidline            fidelity             stability           
-                        shap   lime       shap   lime       shap   lime
-                    0      0.80  0.60       0.90  0.70       0.50  0.40
-                    1      0.70  0.55       0.85  0.72       0.52  0.42
-                    2      0.75  0.65       0.87  0.71       0.49  0.41
+                    treatment	model	guidline	fidelity	stability
+                        chemo	shap	[0.8, 0.7]	[0.75, 0.8]	[0.6, 0.65]
+                        chemo	lime	[0.9, 0.85]	[0.88, 0.9]	[0.7, 0.72]
+
 
     which can be accessable late using below commands
     
-                df_results["guidline"]["shap"]   # All SHAP values under guideline
-                df_results["fidelity"]["lime"]   # All LIME values under fidelity
-    
+
+               
+                print(df_results[df_results["treatment"] == "chemo"])  # Access all rows for one treatment, e.g. chemo
+                print(df_results[df_results["model"] == "shap"]). # Access shap rows only
+
+                    # Access a single cell, e.g. shap-guidline values for chemo
+                    value = df_results[
+                        (df_results["treatment"] == "chemo") & 
+                        (df_results["model"] == "shap")] ["guidline"].values[0]
+
     '''
+   
+   
     ut = Utils(dataset_path="../data/NKR_IKNL_breast_syntheticdata.csv")
     warnings.filterwarnings('ignore')
     data, X, Y, classes_names = ut.data_read_function( )
@@ -66,10 +74,8 @@ def main():
     }
 
     # Convert to DataFrame
-    results_df = pd.concat(
-    {outer_k: pd.DataFrame(inner_v) for outer_k, inner_v in results.items()},
-    axis=1
-    )
+    results_df =  ut.build_results_dataframe(guidline_Plot_Data, fidelity_Plot_Data, stability_Plot_Data)
+
     #save the results in the result directory
     os.makedirs("results", exist_ok=True)
     file_path = os.path.join("results", "Result_Data.csv")

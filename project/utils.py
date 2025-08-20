@@ -11,6 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from explainers import Explainers
+
 logging.getLogger("shap").setLevel(logging.WARNING)
 # Configure logger
 from logging_config import get_logger
@@ -363,4 +364,26 @@ class Utils:
         
         return stability_Plot_Data
         
-            
+    def build_results_dataframe(self, guidline_Plot_Data, fidelity_Plot_Data, stability_Plot_Data):
+        results = []
+
+        # Assume all dicts have same keys (treatments)
+        for treatment in guidline_Plot_Data.keys():
+            shap_row = {
+                "treatment": treatment,
+                "model": "shap",
+                "guidline": guidline_Plot_Data[treatment][0],
+                "fidelity": fidelity_Plot_Data[treatment][0],
+                "stability": stability_Plot_Data[treatment][0]
+            }
+            lime_row = {
+                "treatment": treatment,
+                "model": "lime",
+                "guidline": guidline_Plot_Data[treatment][1],
+                "fidelity": fidelity_Plot_Data[treatment][1],
+                "stability": stability_Plot_Data[treatment][1]
+            }
+            results.extend([shap_row, lime_row])
+            logger.info("datafram of  all the results has been created")
+        df = pd.DataFrame(results)
+        return df
