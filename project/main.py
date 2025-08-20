@@ -18,7 +18,7 @@ from logging_config import get_logger
 logger = get_logger(__name__)
 
 
-def main():
+def main(dataset_path):
     '''
     It create the results directory and stores:
      (1) the comparison plots of fidelity, stability and comparison with the medical guidlines over LIME and SHAP
@@ -43,9 +43,10 @@ def main():
 
     '''
    
-   
-    ut = Utils(dataset_path="../data/NKR_IKNL_breast_syntheticdata.csv")
+   #initializing utils calss
+    ut = Utils(dataset_path)
     warnings.filterwarnings('ignore')
+    
     data, X, Y, classes_names = ut.data_read_function( )
     Treatments=['chemo','target','hormonal','radio','surgery']
 
@@ -85,4 +86,5 @@ def main():
 if __name__ == "__main__":
     # code to run when the file is executed directly
     logger.info("Main execution started.")
-    main()
+    dataset_path="../data/NKR_IKNL_breast_syntheticdata.csv"
+    main(dataset_path)
