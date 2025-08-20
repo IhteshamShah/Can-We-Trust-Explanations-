@@ -11,13 +11,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from explainers import Explainers
-
+logging.getLogger("shap").setLevel(logging.WARNING)
 # Configure logger
-logging.basicConfig(
-    filename="utils.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+from logging_config import get_logger
+logger = get_logger(__name__)
 
 
 class Utils:
@@ -25,7 +22,7 @@ class Utils:
         self.dataset_path = dataset_path
         self.EXP = Explainers() #initialize Explainers here
 
-        logging.info(f"Utils initialized with dataset path: {dataset_path}")
+        logger.info(f"Utils initialized with dataset path: {dataset_path}")
 
     def data_read_function(self):
         try:
@@ -65,10 +62,10 @@ class Utils:
                 'surgery': ['No_surgery', 'surgery']
             }
             #writing logs
-            logging.info("Data successfully read and processed.")
+            logger.info("Data successfully read and processed.")
             return data, X, Y, classes_names
         except Exception as e:
-            logging.error(f"Error reading dataset: {e}")
+            logger.error(f"Error reading dataset: {e}")
             raise
 
     def computing_j(self, rf, x_test, y_test):
@@ -79,10 +76,10 @@ class Utils:
                 sample = data_row.values.reshape(1, -1)
                 if rf.predict(sample)[0] == 1 and y_test[j] == 1:
                     J.append(j)
-            logging.info(f"Computed indices for J")
+            logger.info(f"Computed indices for J")
             return J
         except Exception as e:
-            logging.error(f"Error in computing_j: {e}")
+            logger.error(f"Error in computing_j: {e}")
             raise
 
     def Guidelines(self):
@@ -98,7 +95,7 @@ class Utils:
             'Stage_based_on_cTNM_3C': 'High', 'Stage_based_on_cTNM_4': 'High',
             'Morphology': 'High', 'DCIS_component': 'Low'
         }
-        logging.info("Medical guidelines returned.")
+        logger.info("Medical guidelines returned.")
         return medical_guidelines
 
     def map_importance(self, feature, importance_list):
@@ -110,7 +107,7 @@ class Utils:
     def compare_with_guidelines(self, important_features, guidelines):
         comparison = [(feature, self.map_importance(feature, important_features), guidelines[feature]) 
                       for feature in guidelines]
-        logging.info(f"done Comparison with guidelines")
+        logger.info(f"done Comparison with guidelines")
         return comparison
 
     def calculate_concordance(self, comparison):
@@ -120,7 +117,7 @@ class Utils:
                (model_importance == 0 and guideline_importance == 'Low'):
                 concordant_pairs += 1
         concordance = concordant_pairs / len(comparison)
-        logging.info(f"Concordance calculated")
+        logger.info(f"Concordance calculated")
         return concordance
     
 
@@ -176,19 +173,19 @@ class Utils:
             os.makedirs("results", exist_ok=True)
             save_path = os.path.join("results", f"{filename}.png")
             plt.savefig(save_path, bbox_inches="tight")
-            logging.info(f"Plot saved to {save_path}")
+            logger.info(f"Plot saved to {save_path}")
 
             plt.close()
 
         except Exception as e:
-            logging.error(f"Error in Plot_the_data: {e}")
+            logger.error(f"Error in Plot_the_data: {e}")
             raise
 
     def train_randomForestClassifier(self, x_train, y_train, x_test):
         rf = RandomForestClassifier()
         rf.fit(x_train, y_train)
         y_pred = rf.predict(x_test)
-        logging.info(f"randomforestcalssifer traind on {x_train.shape} size of training data")
+        logger.info(f"randomforestcalssifer traind on {x_train.shape} size of training data")
         return rf , y_pred
     
     def prepare_data(self, X, Y, treatment_name):
@@ -213,18 +210,18 @@ class Utils:
 
 
     def Lime_Shap_guidlineComparison(self, X, Y, classes_names, guidline_Plot_Data, treatment_name): 
-        logging.info("Starting main_function_guidlineComparison execution") 
+        logger.info("Starting main_function_guidlineComparison execution") 
         warnings.filterwarnings('ignore')
 
         x_train, x_test, y_train, y_test = self.prepare_data(X,Y, treatment_name)
-        logging.info("Data-prepare for GuidlineComparision has been completed")
+        logger.info("Data-prepare for GuidlineComparision has been completed")
         
         Lime_Concordance=[]
         SHAP_Concordance=[]
 
         #Randomforest Classifier
         rf, y_pred  = self.train_randomForestClassifier(x_train, y_train, x_test)
-        logging.info("RandomForest training complete for GuidlineComparision")
+        logger.info("RandomForest training complete for GuidlineComparision")
 
         medical_guidelines= self.Guidelines( ) #function for medical guidlines
         j_list= self.computing_j (rf, x_test, y_test)[:10]
@@ -233,20 +230,20 @@ class Utils:
             data_row = X.iloc[[j], :] #single instance from the test dataset
             sample =data_row.values.reshape(1, -1) 
             Predicted_class= rf.predict(sample)[0]
-            logging.info("calling shap_explain function for GuidlineComparision")
+            logger.info("calling shap_explain function for GuidlineComparision")
             shap_important_features= self.EXP.shap_explain(rf.predict_proba, x_train, y_test, data_row,Predicted_class)
-            logging.info("Got Shap explanation for GuidlineComparision")
+            logger.info("Got Shap explanation for GuidlineComparision")
 
-            logging.info("calling lime_explain function for GuidlineComparision")
+            logger.info("calling lime_explain function for GuidlineComparision")
             lime_features = self.EXP.lime_explain (rf.predict_proba, x_train, y_test, sample,Predicted_class, classes_names)
-            logging.info("Got Lime explanation for GuidlineComparision")
+            logger.info("Got Lime explanation for GuidlineComparision")
 
             # Compare SHAP
             shap_comparison = self.compare_with_guidelines(shap_important_features, medical_guidelines)
-            logging.info("Done shap comparison with Guidline")
+            logger.info("Done shap comparison with Guidline")
             # Compare LIME
             lime_comparison = self.compare_with_guidelines(lime_features, medical_guidelines)
-            logging.info("Done Lime comparison with Guidline")
+            logger.info("Done Lime comparison with Guidline")
 
             #print("LIME Comparison with Guidelines:", lime_comparison)
             #print("SHAP Comparison with Guidelines:", shap_comparison)
@@ -262,7 +259,7 @@ class Utils:
         
         guidline_Plot_Data[y_test.name]=[SHAP_Concordance, Lime_Concordance]
 
-        logging.info(f"returning guidline_Plot_Data for {y_test.name}")
+        logger.info(f"returning guidline_Plot_Data for {y_test.name}")
         
         return guidline_Plot_Data
         
@@ -272,12 +269,12 @@ class Utils:
         warnings.filterwarnings('ignore')
 
         x_train, x_test, y_train, y_test = self.prepare_data(X,Y, treatment_name)
-        logging.info("Data-prepare for Lime_Shap_fidelity has been completed")
+        logger.info("Data-prepare for Lime_Shap_fidelity has been completed")
         
 
         #Randomforest Classifier
         rf, y_pred  = self.train_randomForestClassifier(x_train, y_train, x_test)
-        logging.info("RandomForest training complete for Lime_Shap_fidelity")
+        logger.info("RandomForest training complete for Lime_Shap_fidelity")
         
         
         Lime_fidelity=[]
@@ -328,7 +325,7 @@ class Utils:
 
 
         fidelity_Plot_Data[y_test.name]=[Shap_fidelity, Lime_fidelity]
-        logging.info(f"returning fidelity_Plot_Data for {y_test.name}")
+        logger.info(f"returning fidelity_Plot_Data for {y_test.name}")
         
         return fidelity_Plot_Data
     
@@ -337,12 +334,12 @@ class Utils:
         warnings.filterwarnings('ignore')
 
         x_train, x_test, y_train, y_test = self.prepare_data(X,Y, treatment_name)
-        logging.info("Data-prepare for Lime_Shap_fidelity has been completed")
+        logger.info("Data-prepare for Lime_Shap_fidelity has been completed")
         
         #Randomforest Classifier
-        logging.info("Training RandomForest classifier for Lime_Shap_fidelity")
+        logger.info("Training RandomForest classifier for Lime_Shap_fidelity")
         rf, y_pred  = self.train_randomForestClassifier(x_train, y_train, x_test)
-        logging.info("RandomForest training complete for Lime_Shap_fidelity")
+        logger.info("RandomForest training complete for Lime_Shap_fidelity")
 
 
         # Explanation over 20 single points 
@@ -362,7 +359,7 @@ class Utils:
             Lime_VSI.append(lime_vsi)
             
         stability_Plot_Data[treatment_name]=[Shap_VSI, Lime_VSI]
-        logging.info(f"returning stability_Plot_Data for {y_test.name}")
+        logger.info(f"returning stability_Plot_Data for {y_test.name}")
         
         return stability_Plot_Data
         

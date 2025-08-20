@@ -6,16 +6,13 @@ import logging
 import itertools
 
 # Configure logger
-logging.basicConfig(
-    filename="explainers.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+from logging_config import get_logger
+logger = get_logger(__name__)
 
-
+logging.getLogger("shap").setLevel(logging.WARNING)
 class Explainers:
     def __init__(self):
-        logging.info("Explainers initialized.")
+        logger.info("Explainers initialized.")
 
     def shap_explain(self, model, x_train, y_test, data_row, Predicted_class):
         """
@@ -49,11 +46,10 @@ class Explainers:
             positive_list.sort(key=lambda x: x[1], reverse=False)
             top_features = positive_list[:25]
 
-            logging.info(f"SHAP top features: {top_features}")
             return top_features
 
         except Exception as e:
-            logging.error(f"Error in shap_explain: {e}")
+            logger.error(f"Error in shap_explain: {e}")
             raise
 
     def lime_explain(self, model, x_train, y_test, sample, Predicted_class, classes_names):
@@ -86,12 +82,11 @@ class Explainers:
 
             # Sort and take top 25
             sorted_list = sorted(zip(x_names, y_values), key=lambda pair: pair[1], reverse=False)[:25]
-
-            logging.info(f"LIME top features: {sorted_list}")
+            
             return sorted_list
 
         except Exception as e:
-            logging.error(f"Error in lime_explain: {e}")
+            logger.error(f"Error in lime_explain: {e}")
             raise
 
 
@@ -101,7 +96,7 @@ class Explainers:
             g1, g2 = pair
             return len(set(g1).intersection(set(g2)))
         except Exception as e:
-            logging.error(f"Error in calculation concordance: {e}")
+            logger.error(f"Error in calculation concordance: {e}")
             raise
 
     def calculate_vsi(self, explanations):
@@ -126,7 +121,7 @@ class Explainers:
             return vsi
         
         except Exception as e:
-            logging.error(f"Error in calculate_vsi: {e}")
+            logger.error(f"Error in calculate_vsi: {e}")
             raise
 
 

@@ -14,6 +14,10 @@ from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from utils import Utils
 
+from logging_config import get_logger
+logger = get_logger(__name__)
+
+
 def main():
     '''
     It create the results directory and stores:
@@ -74,4 +78,5 @@ def main():
 
 if __name__ == "__main__":
     # code to run when the file is executed directly
+    logger.info("Main execution started.")
     main()
