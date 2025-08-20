@@ -15,7 +15,7 @@ from imblearn.over_sampling import SMOTE
 from utils import Utils
 
 def main():
-    ut = Utils(dataset_path="'/Users/ihteshamshah/Desktop/Postdoc/Dataset/NKR_IKNL_breast_syntheticdata.csv'")
+    ut = Utils(dataset_path="./data/NKR_IKNL_breast_syntheticdata.csv")
     warnings.filterwarnings('ignore')
     data, X, Y, classes_names = ut.data_read_function( )
     Plot_Data={}
@@ -23,8 +23,8 @@ def main():
     for treatment_name in Treatments :
         Plot_Data= ut.main_function_guidlineComparison(data, X, Y, classes_names, Plot_Data, treatment_name)
 
-    colors = ['skyblue', 'orange'] #plot colors
-    Plot_the_data(Plot_Data, colors)
+    colors = ['skyblue', 'orange'] #plot colors for shap and Lime
+    ut.Plot_the_data(Plot_Data, colors, filename = 'guidline_comparison_plot')
 
 
 
