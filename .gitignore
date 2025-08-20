@@ -24,6 +24,7 @@ MANIFEST
 # Jupyter Notebook
 .ipynb_checkpoints
 Main_Stability_fedility_guidline.ipynb
+Expert_evaluation.ipynb
 
 # Data files
 *.csv
