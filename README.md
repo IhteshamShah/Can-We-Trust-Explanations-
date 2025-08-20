@@ -44,13 +44,7 @@ Run the experiments with:
 python main.py
 ```
 
-Results (plots and logs) are saved automatically to the **`models/workspace/Explanation_plot/`** directory.
-Example output includes SHAP and LIME explanation plots with and without treatment parameters:
-
-```
-survival_prediction_12m_no_treatment_Explanation.png
-survival_prediction_12m_with_treatment_Explanation.png
-```
+Results (logs and plots) are saved automatically to the **`logs/project.log`** and  **`projects/results/`** directory.
 
 ---
 
