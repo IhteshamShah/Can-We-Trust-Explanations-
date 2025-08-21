@@ -1,6 +1,10 @@
 import os
 import logging
+'''
+setting up a single log file outside your project folder and 
+let all project files (explainer.py, utils.py, main.py) write to the same log.
 
+'''
 # Get parent directory (one step back from project folder)
 parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
 

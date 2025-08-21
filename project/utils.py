@@ -6,7 +6,7 @@ from lime.lime_tabular import LimeTabularExplainer
 import logging
 import matplotlib.pyplot as plt
 import os
-from lime.lime_tabular import LimeTabularExplainer
+import yaml
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
@@ -17,6 +17,16 @@ logging.getLogger("shap").setLevel(logging.WARNING)
 from logging_config import get_logger
 logger = get_logger(__name__)
 
+# Load config.yaml
+with open("../config.yaml", "r") as f:
+    config = yaml.safe_load(f)
+
+utils_config = config["utils"]
+lime_params = config["explainer"]["lime"]
+shap_params = config["explainer"]["shap"]
+smote_params = utils_config.get("smote", {})
+rf_params = utils_config.get("random_forest", {})
+plots_config = config.get("plots", {})
 
 class Utils:
     def __init__(self, dataset_path=None):
@@ -120,8 +130,6 @@ class Utils:
         concordance = concordant_pairs / len(comparison)
         logger.info(f"Concordance calculated")
         return concordance
-    
-
 
     def Plot_the_data(self, Plot_Data, Colors, filename=None):
         """
@@ -148,36 +156,21 @@ class Utils:
 
             # Colors for SHAP and LIME
             colors = Colors
-
-            # Plot each boxplot
-            for i, (label, values) in enumerate(data.items()):
+            for i, (label, values) in enumerate(Plot_Data.items()):
                 bp_shap = ax.boxplot(values[0], positions=[positions[i] - 0.2], widths=0.4, patch_artist=True, boxprops=dict(facecolor=colors[0]))
                 bp_lime = ax.boxplot(values[1], positions=[positions[i] + 0.25], widths=0.4, patch_artist=True, boxprops=dict(facecolor=colors[1]))
-
-            # Adding legend
             ax.legend([bp_shap["boxes"][0], bp_lime["boxes"][0]], ['SHAP', 'LIME'], loc='upper right')
-
-            # Set the axes ticks and labels
             ax.set_xticks(positions)
             ax.set_xticklabels(labels)
-
-            # Adding grid
             ax.yaxis.grid(True, linestyle='-', which='major', color='grey', alpha=0.5)
             ax.set_axisbelow(True)
-
-            # Adding X and Y axis labels
-            ax.set_xlabel(' ')
-            ax.set_ylabel('Values')
-
-            # Save plot if path provided
-            # Ensure "plot" directory exists
-            os.makedirs("results", exist_ok=True)
-            save_path = os.path.join("results", f"{filename}.png")
+            ax.set_xlabel(plots_config.get("xlabel", " "))
+            ax.set_ylabel(plots_config.get("ylabel", "Values"))
+            os.makedirs(plots_config.get("results_dir", "results"), exist_ok=True)
+            save_path = os.path.join(plots_config.get("results_dir", "results"), f"{filename}.{plots_config.get('save_format', 'png')}")
             plt.savefig(save_path, bbox_inches="tight")
             logger.info(f"Plot saved to {save_path}")
-
             plt.close()
-
         except Exception as e:
             logger.error(f"Error in Plot_the_data: {e}")
             raise
@@ -190,33 +183,24 @@ class Utils:
         return rf , y_pred
     
     def prepare_data(self, X, Y, treatment_name):
-        #for _ in range(5):
-
-        y=Y[treatment_name]
-
-        smote = SMOTE(random_state=42)
-
+        y = Y[treatment_name]
+        smote = SMOTE(random_state=smote_params.get("random_seed", 42))
         X_class_resampled, y_class_resampled = smote.fit_resample(X , y)
-
         X_class_resampled.replace({False: 0, True: 1}, inplace=True)
         y_class_resampled.replace({False:0, True:1}, inplace= True)
-
-        x_train,x_test,y_train,y_test=train_test_split(X_class_resampled,y_class_resampled,test_size=0.2)
-
+        # Split the data into training and testing sets
+        x_train,x_test,y_train,y_test=train_test_split(X_class_resampled,y_class_resampled,test_size=rf_params.get("test_size", 0.2))
         x_train.reset_index(drop=True, inplace=True)
         y_train.reset_index(drop=True, inplace=True)
         x_test.reset_index(drop=True, inplace=True)
         y_test.reset_index(drop=True, inplace=True)
         return x_train, x_test, y_train, y_test
 
-
     def Lime_Shap_guidlineComparison(self, X, Y, classes_names, guidline_Plot_Data, treatment_name): 
         logger.info("Starting main_function_guidlineComparison execution") 
         warnings.filterwarnings('ignore')
-
         x_train, x_test, y_train, y_test = self.prepare_data(X,Y, treatment_name)
         logger.info("Data-prepare for GuidlineComparision has been completed")
-        
         Lime_Concordance=[]
         SHAP_Concordance=[]
 
@@ -226,7 +210,6 @@ class Utils:
 
         medical_guidelines= self.Guidelines( ) #function for medical guidlines
         j_list= self.computing_j (rf, x_test, y_test)[:10]
-        #print('j_list', j_list)
         for j in j_list:
             data_row = X.iloc[[j], :] #single instance from the test dataset
             sample =data_row.values.reshape(1, -1) 
@@ -246,15 +229,8 @@ class Utils:
             lime_comparison = self.compare_with_guidelines(lime_features, medical_guidelines)
             logger.info("Done Lime comparison with Guidline")
 
-            #print("LIME Comparison with Guidelines:", lime_comparison)
-            #print("SHAP Comparison with Guidelines:", shap_comparison)
-
             lime_concordance = self.calculate_concordance(lime_comparison)
             shap_concordance = self.calculate_concordance(shap_comparison)
-
-            #print("LIME Concordance with Guidelines:", lime_concordance)
-            #print("SHAP Concordance with Guidelines:", shap_concordance)
-
             Lime_Concordance.append(lime_concordance)
             SHAP_Concordance.append(shap_concordance)
         
@@ -263,29 +239,28 @@ class Utils:
         logger.info(f"returning guidline_Plot_Data for {y_test.name}")
         
         return guidline_Plot_Data
-        
- 
 
     def Lime_Shap_fidelity(self, X, Y, classes_names, fidelity_Plot_Data, treatment_name): 
         warnings.filterwarnings('ignore')
 
         x_train, x_test, y_train, y_test = self.prepare_data(X,Y, treatment_name)
         logger.info("Data-prepare for Lime_Shap_fidelity has been completed")
-        
 
         #Randomforest Classifier
         rf, y_pred  = self.train_randomForestClassifier(x_train, y_train, x_test)
         logger.info("RandomForest training complete for Lime_Shap_fidelity")
         
-        
         Lime_fidelity=[]
         Shap_fidelity=[]
 
         #Lime Explainer
-        LIME_explainer = LimeTabularExplainer(x_train.values, 
-                                    feature_names=x_train.columns, 
-                                    class_names=classes_names[y_test.name], 
-                                    discretize_continuous=True, verbose=True)
+        LIME_explainer = LimeTabularExplainer(
+            x_train.values, 
+            feature_names=x_train.columns, 
+            class_names=classes_names[y_test.name], 
+            discretize_continuous=lime_params["discretize_continuous"], 
+            verbose=lime_params["verbose"]
+        )
         #Shap Explainer 
 
         # Define the number of samples to summarize the background data
@@ -305,47 +280,35 @@ class Utils:
         j_list= self.computing_j (rf, x_test, y_test)[:15]
         
         for j in j_list:
-            data_row = x_test.iloc[[j], :] #single instance from the test dataset
-            sample =data_row.values.reshape(1, -1) #reshape the sample and pickup the value only (making it suitble for lime function)
-
-            # Explain the prediction for the chosen sample
-            LIME_explanation = LIME_explainer.explain_instance(sample[0], rf.predict_proba, num_features=46, num_samples=2000, top_labels=20)
-            #AA= np.array(exp.local_pred, dtype==int)
+            data_row = x_test.iloc[[j], :]
+            sample =data_row.values.reshape(1, -1)
+            LIME_explanation = LIME_explainer.explain_instance(
+                sample[0], rf.predict_proba, 
+                num_features=lime_params["num_features"], 
+                num_samples=lime_params["num_samples"], 
+                top_labels=lime_params["top_labels"]
+            )
             Lime_fidelity.append(LIME_explanation.score)
-            
-
-
-            #Data_row = x_test.iloc[[3], :]
             Predicted_class= rf.predict(data_row)[0]
-
-
-            shap_values_single_instance = Shap_explainer.shap_values(data_row, nsamples=2000, l1_reg="num_features(28)")
+            shap_values_single_instance = Shap_explainer.shap_values(
+                data_row, 
+                nsamples=shap_params["nsamples"], 
+                l1_reg=shap_params["l1_reg"]
+            )
             shap_fedilty= ((rf.predict_proba(data_row)[0][Predicted_class]) /
                         (Shap_explainer.fnull[Predicted_class] + np.sum(np.abs(shap_values_single_instance[Predicted_class]))))
             Shap_fidelity.append(shap_fedilty)
-
-
         fidelity_Plot_Data[y_test.name]=[Shap_fidelity, Lime_fidelity]
         logger.info(f"returning fidelity_Plot_Data for {y_test.name}")
-        
         return fidelity_Plot_Data
-    
 
     def Lime_Shap_stability(self, X, Y,classes_names, stability_Plot_Data, treatment_name): 
         warnings.filterwarnings('ignore')
-
         x_train, x_test, y_train, y_test = self.prepare_data(X,Y, treatment_name)
         logger.info("Data-prepare for Lime_Shap_fidelity has been completed")
-        
         #Randomforest Classifier
-        logger.info("Training RandomForest classifier for Lime_Shap_fidelity")
         rf, y_pred  = self.train_randomForestClassifier(x_train, y_train, x_test)
         logger.info("RandomForest training complete for Lime_Shap_fidelity")
-
-
-        # Explanation over 20 single points 
-
-        #j=np.random.randint(1000, size=(20)) #randomly pick 20 instances from data (in the range of 1000 intances)
         Shap_VSI=[]
         Lime_VSI=[]
         j_list= self.computing_j (rf, x_test, y_test)[:10]
