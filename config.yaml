@@ -1,0 +1,77 @@
+
+main:
+  logging:
+    level: INFO
+    shap_level: WARNING
+  treatments:
+    names:
+      - chemo
+      - target
+      - hormonal
+      - radio
+      - surgery
+  data:
+    dataset_path: "../data/NKR_IKNL_breast_syntheticdata.csv"
+    results_dir: "results"
+    results_file: "Result_Data.csv"
+
+  plots: # colors of the plots
+    colors_guidline:
+      - darkgoldenrod
+      - brown
+    colors_fidelity:
+      - gray
+      - brown
+    colors_stability:
+      - skyblue
+      - orange
+    filenames: #to be used for plot saving 
+      guidline: "guidline_comparison_plot"
+      fidelity: "fidelity_comparison_plot"
+      stability: "stability_comparison_plot"
+    
+explainer:
+  shap:
+    background_sample_size: 200
+    nsamples: 2000
+    l1_reg: "num_features(46)"
+    top_features: 25
+  lime:
+    num_features: 46
+    num_samples: 2000
+    top_labels: 20
+    top_features: 25
+    discretize_continuous: true
+    verbose: false
+  vsi:
+    explanation_runs: 3
+    vsi_top_features: 10
+
+utils:
+  smote:
+    random_seed: 42
+  random_forest:
+    test_size: 0.2
+
+  plots:
+    save_format: "png"
+    figsize: [16, 8]
+    xlabel: " "
+    ylabel: "Values"
+
+  shap:
+    background_sample_size: 200
+    nsamples: 2000
+    l1_reg: "num_features(46)"
+    top_features: 25
+
+  lime:
+    num_features: 46
+    num_samples: 2000
+    discretize_continuous: true
+    verbose: false
+    
+
+general:
+  random_seed: 42
+  warnings_ignore: true
