@@ -20,8 +20,35 @@ We focus on **LIME** and **SHAP** explainers, and evaluate them along three key 
 * **`utils.py`** – Provides data loading, preprocessing, integration of medical guidelines, Random Forest training, and functions to compute explanation results across fidelity, stability, and guideline comparison.
 * **`explainer.py`** – Implements **LIME** and **SHAP** explainers, functions to extract top contributing features, and methods for computing variance/stability indices.
 * **`logging_config.py`** – Centralized logging configuration for capturing experiment outputs, warnings, and errors.
-
+* **`config.yaml`** — Central configuration file for all parameters.
 ---
+
+**Run the code**
+1. Edit **config.yaml** to set dataset paths, model parameters, explainer settings, and plotting options. (**recommended= keep all the setting same just update the dataset paths*)
+2. Run the main script: ```bash python main.py ```
+3. **Check results and plots** in the **results/* directory.
+4. Review logs in project.log for progress and debugging.
+
+## Configuration
+All parameters are defined in config.yaml and grouped by module:
+
+```bash
+explainer:
+  shap: {...}
+  lime: {...}
+  vsi: {...}
+main:
+  treatments: {...}
+  data: {...}
+  plots: {...}
+utils:
+  data: {...}
+  preprocessing: {...}
+  smote: {...}
+  random_forest: {...}
+  guidelines: {...}
+plots: {...}
+```
 
 ## ⚙️ Installation
 
