@@ -25,7 +25,7 @@ We focus on **LIME** and **SHAP** explainers, and evaluate them along three key 
 
 **Run the code**
 1. Edit **config.yaml** to set dataset paths, model parameters, explainer settings, and plotting options. (**recommended= keep all the setting same just update the dataset paths*)
-2. Nevigate to the project directory ``` cd project.py ``` and Run the main script: ```bash python main.py ```
+2. Nevigate to the project directory ``` cd project ``` and Run the main script: ```bash python main.py ```
 3. **Check results and plots** in the **results/* directory.
 4. Review logs in project.log for progress and debugging.
 
